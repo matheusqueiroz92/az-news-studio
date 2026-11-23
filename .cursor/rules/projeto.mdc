@@ -1,0 +1,14 @@
+---
+description: Regras gerais do AZ News Studio
+alwaysApply: true
+---
+
+Antes de qualquer tarefa, leia e siga `AGENTS.md` na raiz do repositório.
+
+- Toda tarefa vem de uma spec em `specs/` e do plano da fase (`specs/<fase>/plan.md`). Não implemente nada fora do plano; se faltar algo, pare e proponha a mudança.
+- Arquitetura hexagonal: `packages/core` não importa `adapters`, `db`, `apps` nem SDKs.
+- TDD em `packages/core`: teste falhando primeiro.
+- Não altere arquivos em `specs/` e `docs/adr/` sem pedido explícito.
+- Ao terminar uma tarefa: rode `pnpm lint`, `pnpm typecheck` e `pnpm test`, mostre o resultado e pare. Não comece a próxima tarefa sozinho.
+- Commits pequenos, Conventional Commits em português.
+- Respostas e textos de interface em português; código e identificadores em inglês.
