@@ -1,0 +1,15 @@
+{
+  "name": "@az-news/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.node.json": "./tsconfig.node.json",
+    "./prettier.config.mjs": "./prettier.config.mjs",
+    "./vitest.shared": "./vitest.shared.ts"
+  },
+  "dependencies": {
+    "vitest": "5.1.1"
+  }
+}

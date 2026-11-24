@@ -83,11 +83,11 @@ Rascunho de teste (RF-04), sempre em português:
   - `pnpm typecheck`
   - `pnpm test`
   - `pnpm exec tsc --version` imprime 5.9.x
-- Critério de pronto: os quatro comandos terminam com código 0; `pnpm-workspace.yaml` declara `apps/*` e `packages/*`; `.nvmrc` é `22`; `package.json` da raiz tem `"packageManager": "pnpm@10"` com o patch exato da linha 10; `.env.example` contém todas as variáveis da spec mais `SEED_ADMIN_EMAIL=`; nenhum pacote de app ou de domínio é criado nesta tarefa; versões pinadas sem `^`, conforme a tabela de versões.
+- Critério de pronto: os quatro comandos terminam com código 0; `pnpm-workspace.yaml` declara `apps/*` e `packages/*`; `.nvmrc` é `24`; `package.json` da raiz tem `"packageManager": "pnpm@10"` com o patch exato da linha 10; `.env.example` contém todas as variáveis da spec mais `SEED_ADMIN_EMAIL=`; nenhum pacote de app ou de domínio é criado nesta tarefa; versões pinadas sem `^`, conforme a tabela de versões.
 - Requisitos: critério de aceitação do CI (os scripts que o CI vai chamar existem); NFR de TypeScript strict e de segredos via ambiente.
 - Commit sugerido: `chore: inicia o monorepo da fase 0`
 
-Notas para o implementer: Node 22 (`engines": ">=22 <23"`). Prettier e o tsconfig base com `strict`, `noUncheckedIndexedAccess` e `verbatimModuleSyntax` se não atrapalhar o Next. Scripts da raiz delegam ao Turbo: `lint`, `typecheck`, `test`. Não criar `apps/mcp`.
+Notas para o implementer: Node 24 (`engines": ">=24 <25"`), conforme ADR 0002 atualizado em 2026-11-24. Prettier e o tsconfig base com `strict`, `noUncheckedIndexedAccess` e `verbatimModuleSyntax` se não atrapalhar o Next. Scripts da raiz delegam ao Turbo: `lint`, `typecheck`, `test`. Não criar `apps/mcp`.
 
 ## T02 — ESLint com fronteiras da arquitetura hexagonal
 
@@ -645,7 +645,7 @@ Verificação manual contra o WordPress local da T16: o botão cria um rascunho 
 - Verificação:
   - `docker compose -f infra/docker-compose.prod.yml config`
   - `docker build -f infra/Dockerfile.web .` e `docker build -f infra/Dockerfile.worker .` (se o Docker local aguentar; senão o Reviewer confere os Dockerfiles e a T26 faz o build na VPS)
-- Critério de pronto: imagens base `node:22` com patch pinado nesta tarefa, sem tag `latest`; web em `output: 'standalone'`; worker empacotado com tsup; compose sem WordPress (o CMS é externo); Postgres `pgvector/pgvector:pg16` e Redis `redis:7.4.12-alpine` só na rede interna, sem `ports`; web na rede externa `traefik-public`, host `studio.aznews.com.br`, `certresolver=letsencrypt`, entrada HTTPS; comentário no compose com os caminhos `/var/www/az-news-studio` (código) e `/opt/apps/az-news-studio/` (compose, `.env` chmod 600, volumes); nenhum serviço MinIO.
+- Critério de pronto: imagens base `node:24` com patch pinado nesta tarefa, sem tag `latest`; web em `output: 'standalone'`; worker empacotado com tsup; compose sem WordPress (o CMS é externo); Postgres `pgvector/pgvector:pg16` e Redis `redis:7.4.12-alpine` só na rede interna, sem `ports`; web na rede externa `traefik-public`, host `studio.aznews.com.br`, `certresolver=letsencrypt`, entrada HTTPS; comentário no compose com os caminhos `/var/www/az-news-studio` (código) e `/opt/apps/az-news-studio/` (compose, `.env` chmod 600, volumes); nenhum serviço MinIO.
 - Requisitos: critério "app no ar em studio.aznews.com.br com HTTPS" (a parte que é código); NFR de deploy da seção 8.
 - Commit sugerido: `feat(infra): adiciona as imagens e o compose de produção`
 
@@ -658,7 +658,7 @@ Verificação manual contra o WordPress local da T16: o botão cria um rascunho 
   - `.github/workflows/ci.yml`
 - Verificação:
   - o YAML dispara em `pull_request` e em `push` para `main`
-  - Node 22
+  - Node 24
   - passos: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm test`
   - não há passo de deploy
   - não sobe Postgres, Redis nem WordPress (a suíte padrão não precisa)
@@ -805,10 +805,10 @@ Responda só o que quiser mudar. O resto fica como está.
 | D14 | BullMQ e Redis | `bullmq@6.7.8`, `ioredis@6.1.0`. |
 | D15 | HTTP de teste e log | `msw@3.0.7`, `pino@10.4.0`. `pino-pretty` só em dev. |
 | D16 | Vitest, Turbo, ESLint, Prettier | `vitest@5.1.1`, `@vitest/coverage-v8@5.1.1`, `turbo@2.11.13`, `eslint@10.15.0`, `typescript-eslint@8.74.0`, `eslint-plugin-boundaries@7.4.4`, `eslint-config-prettier@10.1.8`, `prettier@3.10.1`. |
-| D17 | Tipos do Node | `@types/node` na linha 22, não a latest 26, para combinar com o runtime do ADR. |
+| D17 | Tipos do Node | `@types/node` na linha 24, não a latest 26, para combinar com o runtime do ADR. |
 | D18 | Worker em produção | Dev com `tsx@4.23.15`. Imagem com `tsup@9.0.0`. |
 | D19 | Imagens Docker já confirmadas em 2026-11-23 | `pgvector/pgvector:pg16` (a spec fixa esta tag), `redis:7.4.12-alpine`, `wordpress:7.1.5-php8.3-apache`. |
-| D20 | Mailpit, MariaDB, wp-cli, Node da imagem | Pinagem semver na tarefa que cria o arquivo, nunca `latest`. MariaDB na linha 11.8. `wordpress:cli` alinhada ao WordPress 7.1.5. Node `22` com patch escrito no Dockerfile. |
+| D20 | Mailpit, MariaDB, wp-cli, Node da imagem | Pinagem semver na tarefa que cria o arquivo, nunca `latest`. MariaDB na linha 11.8. `wordpress:cli` alinhada ao WordPress 7.1.5. Node `24` com patch escrito no Dockerfile. |
 | D21 | Versões no package.json | Exatas, sem `^`. Lockfile commitado. CI com `--frozen-lockfile`. |
 | D22 | Sucesso e corpo inválido do webhook | 204 e 400. Ver problema 8. |
 | D23 | Retry de `createDraft` | Repetir só se não houve resposta HTTP. 4xx/5xx não repetem, para não criar dois rascunhos. A lixeira e o `checkConnection` repetem até 3 vezes. O job no BullMQ também tem 3 tentativas: um retry do job inteiro pode deixar rascunho extra na lixeira. Aceitar isso na Fase 0. |

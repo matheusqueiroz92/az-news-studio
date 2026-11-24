@@ -6,7 +6,7 @@
 ## Decisão
 
 - **Monorepo** com pnpm workspaces + Turborepo: `apps/web`, `apps/worker`, `packages/core`, `packages/adapters`, `packages/db`, `packages/contracts`, `packages/config`.
-- **Node 22 LTS**, **TypeScript 5.9.x** `strict` (linha 5, compatível com o `typescript-eslint`; não usar a linha 7 nesta fase).
+- **Node 24 LTS** (suporte até abril de 2028; o Node 22 perde suporte em abril de 2027; migração para o Node 26 planejada para 2027), **TypeScript 5.9.x** `strict` (linha 5, compatível com o `typescript-eslint`; não usar a linha 7 nesta fase).
 - **Next.js** (App Router) para UI e API interna.
 - **PostgreSQL 16 + Drizzle ORM** (schema em TypeScript, migrações versionadas, SQL previsível).
 - **Redis 7 + BullMQ** para filas.
