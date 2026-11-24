@@ -24,7 +24,7 @@ Exemplos de uso:
 
 ## 3. Autenticação
 
-- **OAuth 2.1** conforme a especificação de autorização do MCP (metadados do servidor de autorização, registro dinâmico de cliente, PKCE). O login reaproveita o Auth.js do Studio (link mágico). Isso permite adicionar o Studio como **conector personalizado** no Claude.
+- **OAuth 2.1** conforme a especificação de autorização do MCP (metadados do servidor de autorização, registro dinâmico de cliente, PKCE), implementado com o plugin **OAuth 2.1 Provider do Better Auth** ([ADR 0006](../../docs/adr/0006-better-auth.md)) sobre a mesma instância de autenticação do Studio. O login continua sendo o link mágico. Isso permite adicionar o Studio como **conector personalizado** no Claude.
 - **Token pessoal** (gerado em "Meu perfil", com escopo e validade) para Claude Code e Cursor.
 - Escopos: `studio:read`, `studio:write`, `studio:publish`, `studio:admin`, mapeados aos papéis `sales`, `editor`, `admin`.
 - Toda chamada grava em `audit_log` com `channel = mcp` e o cliente usado.
@@ -79,7 +79,7 @@ Exemplos de uso:
 ## 8. Tarefas
 
 1. Servidor MCP com Streamable HTTP e ferramentas `readOnly` (sem autenticação, só em dev).
-2. Servidor de autorização OAuth 2.1 integrado ao Auth.js; tokens pessoais.
+2. Servidor de autorização OAuth 2.1 com o plugin OAuth 2.1 Provider do Better Auth (conferir na documentação vigente a integração recomendada para MCP); tokens pessoais.
 3. Ferramentas de escrita e publicação, com escopos e testes de permissão.
 4. Recursos e prompts.
 5. Teste ponta a ponta no Claude (conector personalizado) e no Claude Code.

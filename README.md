@@ -25,7 +25,7 @@ Agentes de IA encontram a pauta, escrevem, revisam e distribuem; a equipe aprova
 ## Documentação
 
 - [Arquitetura](docs/arquitetura.md)
-- [Decisões (ADRs)](docs/adr/): 0001 WordPress como CMS · 0002 stack · 0003 IA estruturada · 0004 agentes e autonomia · 0005 servidor MCP
+- [Decisões (ADRs)](docs/adr/): 0001 WordPress como CMS · 0002 stack · 0003 IA estruturada · 0004 agentes e autonomia · 0005 servidor MCP · 0006 Better Auth
 - [Guia de estilo editorial v1](docs/guia-de-estilo.md) — base do prompt de reescrita
 - [Regras para agentes de IA](AGENTS.md)
 - Specs: [Fase 0 — Base](specs/fase-0-base/spec.md) · [Fase 1A — Redação](specs/fase-1-redacao/spec.md) · [Fase 1B — Fontes e Pauta](specs/fase-1b-pauta/spec.md) · [Servidor MCP](specs/mcp-server/spec.md)
