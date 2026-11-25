@@ -432,7 +432,9 @@ Banco e usuário do compose de dev: `studio` / senha só no `.env`, nunca no arq
 - Requisitos: RF-04 (enfileirar); NFR de retry da arquitetura.
 - Commit sugerido: `feat(adapters): enfileira jobs na fila cms com BullMQ`
 
-Consumir a fila é tarefa do worker (T18). Aqui a porta de saída só publica. Um helper `createCmsWorker` pode morar neste arquivo se couber no teto de linhas; se não couber, o worker instancia `Worker` do BullMQ no próprio `container.ts` e este pacote só exporta as opções e o `enqueue`.
+Consumir a fila é tarefa do worker (T17). Aqui a porta de saída só publica.
+
+**Decisão (2026-11-25, revisão da T04):** o job `TestCmsConnection` é publicado com **`attempts: 1`**, exceção à política de 3 tentativas da fila. Ele é disparado manualmente pelo botão; repetir o job inteiro criaria rascunhos extras (inclusive órfãos fora da lixeira, no caso de `trash_failed`). Falhas de rede transitórias já são repetidas dentro do adaptador (T12/T13). A exceção mora em `packages/adapters/src/queue/job-options.ts` (opções por nome de job), sem alterar a `JobQueuePort` do core; teste esperado na T14: "deve publicar `TestCmsConnection` com uma única tentativa". Um helper `createCmsWorker` pode morar neste arquivo se couber no teto de linhas; se não couber, o worker instancia `Worker` do BullMQ no próprio `container.ts` e este pacote só exporta as opções e o `enqueue`.
 
 ## T15 — Plugin AZ Bridge v1
 
@@ -489,7 +491,7 @@ Consumir a fila é tarefa do worker (T18). Aqui a porta de saída só publica. U
 - Testes esperados:
   - deve chamar `TestCmsConnection` uma vez com o `requestedBy` do payload
   - deve concluir o job quando o caso de uso devolve ok
-  - deve falhar o job quando o caso de uso devolve erro (para o BullMQ aplicar as tentativas)
+  - deve falhar o job quando o caso de uso devolve erro (o job foi publicado com `attempts: 1`, então não há nova tentativa automática; ver nota da T14)
   - deve escrever a chave `worker:heartbeat` com TTL de 30 segundos
   - deve renovar a chave a cada 10 segundos enquanto o processo está de pé
   - deve emitir log JSON sem a senha do WordPress nem o segredo do webhook

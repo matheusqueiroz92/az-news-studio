@@ -4,11 +4,7 @@ import { FakeAuditLog } from '../../test/fakes/fake-audit-log.js';
 import { FakeClock } from '../../test/fakes/fake-clock.js';
 import { FakeCmsPort } from '../../test/fakes/fake-cms-port.js';
 import type { CmsErrorCode } from '../ports/cms-error.js';
-import {
-  TestCmsConnection,
-  buildTestDraft,
-  isRetryableTestCmsConnectionError,
-} from './test-cms-connection.js';
+import { TestCmsConnection, buildTestDraft } from './test-cms-connection.js';
 import type { TestCmsConnectionFailureCode } from './test-cms-connection.js';
 
 const ACTOR = 'user-7';
@@ -113,59 +109,6 @@ describe('buildTestDraft', () => {
     expect(buildTestDraft(PREVIOUS_EVENING)).toEqual(
       expectedDraft('2026-11-23', '20261123-230000'),
     );
-  });
-});
-
-describe('isRetryableTestCmsConnectionError', () => {
-  it('deve repetir quando o código é unreachable', () => {
-    expect(isRetryableTestCmsConnectionError({ code: 'unreachable' })).toBe(
-      true,
-    );
-  });
-
-  it('deve não repetir quando o código é unauthenticated, invalid_response ou draft_failed', () => {
-    expect(isRetryableTestCmsConnectionError({ code: 'unauthenticated' })).toBe(
-      false,
-    );
-    expect(
-      isRetryableTestCmsConnectionError({ code: 'invalid_response' }),
-    ).toBe(false);
-    expect(isRetryableTestCmsConnectionError({ code: 'draft_failed' })).toBe(
-      false,
-    );
-  });
-
-  it('deve não repetir quando o código é trash_failed', () => {
-    expect(
-      isRetryableTestCmsConnectionError({
-        code: 'trash_failed',
-        postId: POST_ID,
-      }),
-    ).toBe(false);
-  });
-
-  it('deve não repetir quando audit_write_failed tem attemptedResult unreachable, success ou trash_failed', () => {
-    expect(
-      isRetryableTestCmsConnectionError({
-        code: 'audit_write_failed',
-        attemptedResult: 'unreachable',
-        postId: null,
-      }),
-    ).toBe(false);
-    expect(
-      isRetryableTestCmsConnectionError({
-        code: 'audit_write_failed',
-        attemptedResult: 'success',
-        postId: POST_ID,
-      }),
-    ).toBe(false);
-    expect(
-      isRetryableTestCmsConnectionError({
-        code: 'audit_write_failed',
-        attemptedResult: 'trash_failed',
-        postId: POST_ID,
-      }),
-    ).toBe(false);
   });
 });
 

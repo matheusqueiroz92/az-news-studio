@@ -30,10 +30,7 @@ export type {
 
 export type { NewUser, User, UserRepository } from './ports/user-repository.js';
 
-export {
-  TestCmsConnection,
-  isRetryableTestCmsConnectionError,
-} from './application/test-cms-connection.js';
+export { TestCmsConnection } from './application/test-cms-connection.js';
 export type {
   TestCmsConnectionError,
   TestCmsConnectionInput,

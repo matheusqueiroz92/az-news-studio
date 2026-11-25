@@ -158,22 +158,6 @@ type CmsAttempt =
     };
 
 /**
- * Diz se o worker (T17) deixa o BullMQ repetir o job.
- * A decisão olha só `error.code`.
- * Só `unreachable` é repetível: nada foi criado e a causa é transitória.
- * `unauthenticated`, `invalid_response` e `draft_failed` não se resolvem
- * com outra tentativa.
- * `trash_failed` e `audit_write_failed` ficam de fora: um job novo criaria
- * outro rascunho. `audit_write_failed` continua fora mesmo quando
- * `attemptedResult` é `unreachable`.
- */
-export function isRetryableTestCmsConnectionError(
-  error: TestCmsConnectionError,
-): boolean {
-  return error.code === 'unreachable';
-}
-
-/**
  * Monta o rascunho da tabela RF-04 para o instante UTC informado.
  * Título: `TEST_DRAFT_TITLE_PREFIX` + `formatStudioCalendarDate`.
  * Slug: `TEST_DRAFT_SLUG_PREFIX` + `formatStudioStamp`.
