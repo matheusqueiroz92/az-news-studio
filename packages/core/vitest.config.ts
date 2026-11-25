@@ -7,6 +7,7 @@ export default mergeConfig(
     test: {
       coverage: {
         provider: 'v8',
+        exclude: ['test/**'],
         thresholds: {
           lines: 90,
         },

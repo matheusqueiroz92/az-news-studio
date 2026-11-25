@@ -29,3 +29,13 @@ export type {
 } from './ports/audit-log-port.js';
 
 export type { NewUser, User, UserRepository } from './ports/user-repository.js';
+
+export {
+  TestCmsConnection,
+  isRetryableTestCmsConnectionError,
+} from './application/test-cms-connection.js';
+export type {
+  TestCmsConnectionError,
+  TestCmsConnectionInput,
+  TestCmsConnectionSuccess,
+} from './application/test-cms-connection.js';
