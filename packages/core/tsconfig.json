@@ -1,0 +1,4 @@
+{
+  "extends": "@az-news/config/tsconfig.node.json",
+  "include": ["src/**/*.ts", "vitest.config.ts"]
+}

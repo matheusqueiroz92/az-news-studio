@@ -1,0 +1,10 @@
+# Fim de linha LF em todo o repositório (produção roda em Linux)
+* text=auto eol=lf
+
+# Binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff2 binary

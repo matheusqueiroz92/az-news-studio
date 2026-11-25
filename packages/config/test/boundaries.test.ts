@@ -43,6 +43,19 @@ describe('fronteiras da arquitetura hexagonal', () => {
     expect(ruleCount(result, 'boundaries/dependencies')).toBeGreaterThan(0);
   });
 
+  it('deve falhar quando o ESLint roda com cwd em packages/core e src importa @az-news/adapters', async () => {
+    const coreRoot = path.join(repoRoot, 'packages/core');
+    const fromCore = new ESLint({ cwd: coreRoot });
+    const [result] = await fromCore.lintText(
+      "import { cms } from '@az-news/adapters';\nexport const value = cms;\n",
+      { filePath: path.join(coreRoot, 'src/forbidden.ts') },
+    );
+    if (result === undefined) {
+      throw new Error('ESLint não devolveu resultado para src/forbidden.ts');
+    }
+    expect(ruleCount(result, 'boundaries/dependencies')).toBeGreaterThan(0);
+  });
+
   it('deve falhar quando packages/core importa @az-news/db', async () => {
     const result = await lint(
       'packages/core/src/forbidden.ts',

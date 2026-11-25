@@ -35,6 +35,13 @@ const externalOrBuiltin = {
 
 export default [
   {
+    // Globs sempre a partir da raiz, mesmo quando o ESLint sobe com cwd no pacote.
+    basePath: repoRoot,
+    // Pastas geradas: relatório de cobertura, builds e caches.
+    ignores: ['**/coverage/**', '**/dist/**', '**/.next/**', '**/.turbo/**'],
+  },
+  {
+    basePath: repoRoot,
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
@@ -42,6 +49,7 @@ export default [
   },
   prettier,
   {
+    basePath: repoRoot,
     files: [
       `packages/{core,contracts,db,adapters}/${sourceFiles}`,
       `apps/{web,worker}/${sourceFiles}`,
@@ -139,6 +147,7 @@ export default [
     },
   },
   {
+    basePath: repoRoot,
     files: [`packages/core/${sourceFiles}`],
     rules: {
       'no-restricted-globals': [
