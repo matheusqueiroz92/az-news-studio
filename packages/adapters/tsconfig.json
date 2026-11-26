@@ -1,0 +1,7 @@
+{
+  "extends": "@az-news/config/tsconfig.node.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "vitest.config.ts"]
+}

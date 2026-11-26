@@ -21,6 +21,40 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/adapters:
+    dependencies:
+      '@az-news/core':
+        specifier: workspace:*
+        version: link:../core
+      '@az-news/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(@electric-sql/pglite@0.6.0)(@types/pg@8.23.1)(kysely@0.29.9)(pg@8.23.1)
+    devDependencies:
+      '@az-news/config':
+        specifier: workspace:*
+        version: link:../config
+      '@electric-sql/pglite':
+        specifier: 0.6.0
+        version: 0.6.0
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+      '@vitest/coverage-v8':
+        specifier: 5.1.1
+        version: 5.1.1(vitest@5.1.1)
+      eslint:
+        specifier: 10.15.0
+        version: 10.15.0(jiti@2.7.0)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.1.1
+        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+
   packages/config:
     dependencies:
       eslint:
