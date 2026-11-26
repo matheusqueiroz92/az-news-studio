@@ -12,10 +12,13 @@
     "test": "vitest run --coverage"
   },
   "dependencies": {
-    "@az-news/core": "workspace:*"
+    "@az-news/core": "workspace:*",
+    "@az-news/db": "workspace:*",
+    "drizzle-orm": "0.45.4"
   },
   "devDependencies": {
     "@az-news/config": "workspace:*",
+    "@electric-sql/pglite": "0.6.0",
     "@types/node": "24.19.2",
     "@vitest/coverage-v8": "5.1.1",
     "eslint": "10.15.0",
