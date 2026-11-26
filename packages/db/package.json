@@ -9,18 +9,24 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "migrate": "tsx --env-file=../../.env src/migrate.ts",
+    "seed": "tsx --env-file=../../.env src/seed-admin.ts"
   },
   "dependencies": {
-    "drizzle-orm": "0.45.4"
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@az-news/config": "workspace:*",
+    "@electric-sql/pglite": "0.6.0",
     "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
     "auth": "1.7.28",
     "better-auth": "1.7.28",
     "drizzle-kit": "0.31.11",
     "eslint": "10.15.0",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "5.1.1"
   }
