@@ -355,6 +355,7 @@ Banco e usuário do compose de dev: `studio` / senha só no `.env`, nunca no arq
   - `packages/adapters/src/index.ts`
 - Testes esperados (PGlite, entram no `pnpm test`, sem Docker):
   - deve inserir e achar o usuário pelo e-mail em qualquer caixa
+  - deve gravar name como '' quando NewUser.name é null e devolver null ao ler (users.name é NOT NULL no schema do Better Auth; o domínio aceita null)
   - deve persistir papel e active
   - deve contar admins ativos
   - deve inserir audit log com `occurred_at` em UTC
