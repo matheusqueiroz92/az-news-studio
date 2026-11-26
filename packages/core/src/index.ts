@@ -30,6 +30,9 @@ export type {
 
 export type { NewUser, User, UserRepository } from './ports/user-repository.js';
 
+export { RecordWordpressWebhook } from './application/record-wordpress-webhook.js';
+export type { RecordWordpressWebhookError } from './application/record-wordpress-webhook.js';
+
 export { TestCmsConnection } from './application/test-cms-connection.js';
 export type {
   TestCmsConnectionError,

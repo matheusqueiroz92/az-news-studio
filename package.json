@@ -8,7 +8,11 @@
   "scripts": {
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "db:migrate": "pnpm --filter @az-news/db migrate",
+    "db:seed": "pnpm --filter @az-news/db seed",
+    "infra:up": "docker compose --env-file .env -f infra/docker-compose.dev.yml up -d",
+    "infra:down": "docker compose --env-file .env -f infra/docker-compose.dev.yml down"
   },
   "devDependencies": {
     "@az-news/config": "workspace:*",

@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --coverage"
   },
+  "dependencies": {
+    "@az-news/contracts": "workspace:*"
+  },
   "devDependencies": {
     "@az-news/config": "workspace:*",
     "@vitest/coverage-v8": "5.1.1",
