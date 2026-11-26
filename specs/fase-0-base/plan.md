@@ -547,9 +547,11 @@ Dev: `tsx`. A imagem de produção empacota com tsup na T25.
   - deve recusar e-mail que não está cadastrado
   - deve recusar usuário inativo
   - deve montar a linha `auth.sign_in` com o id do usuário e channel `web` quando a sessão é criada
-- Critério de pronto: Better Auth com adaptador Drizzle (`usePlural: true`), sessões no banco e plugin de link mágico com a criação automática de usuário **desligada**; a função `sendMagicLink` chama a política testada **antes** de enviar (e-mail desconhecido ou inativo não recebe link) e envia via Nodemailer (`EMAIL_SERVER`, `EMAIL_FROM`); `role` e `active` disponíveis na sessão; rota `[...all]` com o handler do Better Auth para Next.js; página de login em português diz quando o e-mail não pode entrar; Mailpit (`smtp://localhost:1025`) recebe o link com a web rodando no host; variáveis `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL`.
+- Critério de pronto: Better Auth com adaptador Drizzle (`usePlural: true`), sessões no banco e plugin de link mágico com a criação automática de usuário **desligada**; a função `sendMagicLink` chama a política testada **antes** de enviar (e-mail desconhecido ou inativo não recebe link) e envia via Nodemailer (`EMAIL_SERVER`, `EMAIL_FROM`); `role` e `active` disponíveis no helper de sessão do servidor, **lidos do banco a cada requisição** (ver decisão abaixo), nunca guardados no cookie; rota `[...all]` com o handler do Better Auth para Next.js; página de login em português diz quando o e-mail não pode entrar; Mailpit (`smtp://localhost:1025`) recebe o link com a web rodando no host; variáveis `BETTER_AUTH_SECRET` e `BETTER_AUTH_URL`.
 - Requisitos: RF-01; critério "login por link mágico funciona para e-mail cadastrado e é recusado para não cadastrado"; RF-06 (`auth.sign_in`).
 - Commit sugerido: `feat(web): entra com link mágico só para e-mail cadastrado`
+
+**Decisão (2026-11-25, revisão da T05):** `role` e `active` do usuário logado são lidos do banco **a cada requisição autenticada** (no helper que obtém a sessão no servidor), nunca de um valor guardado no cookie ou em cache da sessão. Usuário desativado perde o acesso na requisição seguinte; admin rebaixado perde as páginas de admin na hora. Teste esperado: "deve negar acesso quando o usuário da sessão foi desativado depois do login".
 
 Verificação manual desta tarefa: seed aplicado, pedir link do admin, abrir o Mailpit em `http://localhost:8025`, entrar, pedir link de um e-mail desconhecido e ver a recusa.
 
@@ -568,7 +570,7 @@ Verificação manual desta tarefa: seed aplicado, pedir link do admin, abrir o M
   - deve chamar `createUser` com o autor da sessão
   - deve chamar `changeUserRole` e `setUserActive`
   - deve mostrar o erro de domínio em português quando o caso de uso recusa (último admin, e-mail duplicado)
-- Critério de pronto: editor e sales autenticados não usam a rota (redirecionam para a home); a página lista e-mail, papel e situação; textos em português.
+- Critério de pronto: editor e sales autenticados não usam a rota (redirecionam para a home); a página lista e-mail, papel e situação; textos em português; o autor passado ao `ManageUsers` vem do helper da T19 (papel lido do banco na requisição), nunca de campo do formulário.
 - Requisitos: RF-02, RF-06.
 - Commit sugerido: `feat(web): permite ao admin gerenciar usuários`
 
@@ -764,6 +766,10 @@ A T25 fica no fim da lista porque o deploy depende dela, mas o commit dela é lo
 | Compose de dev e de prod, Dockerfiles | T09, T16, T24 |
 | CI lint, typecheck, test, sem deploy automático | T25 |
 | Plugin PHP ≥ 8.1, WordPress ≥ 6.4, sem efeito no front | T15, T16 |
+
+## Dívida técnica registrada
+
+- **Corrida no "último admin" (T05):** dois admins rebaixando ou desativando um ao outro ao mesmo tempo podem passar ambos pela checagem `countActiveAdmins() < 2`. Risco aceito na Fase 0 (equipe de 2 a 3 pessoas). Correção futura: operação condicional/transação no adaptador (ex.: `UPDATE ... WHERE (SELECT count(*) ...) > 1`).
 
 ## Problemas na spec
 

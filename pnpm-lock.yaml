@@ -46,6 +46,28 @@ importers:
         specifier: 24.19.2
         version: 24.19.2
 
+  packages/contracts:
+    dependencies:
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@az-news/config':
+        specifier: workspace:*
+        version: link:../config
+      '@vitest/coverage-v8':
+        specifier: 5.1.1
+        version: 5.1.1(vitest@5.1.1)
+      eslint:
+        specifier: 10.15.0
+        version: 10.15.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.1.1
+        version: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2))
+
   packages/core:
     devDependencies:
       '@az-news/config':
@@ -1091,6 +1113,9 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@babel/helper-string-parser@7.29.15': {}
@@ -1990,3 +2015,5 @@ snapshots:
   wordwrap@1.0.0: {}
 
   yocto-queue@0.1.0: {}
+
+  zod@4.6.7: {}
