@@ -1,0 +1,27 @@
+{
+  "name": "@az-news/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "@az-news/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "auth": "1.7.28",
+    "better-auth": "1.7.28",
+    "drizzle-kit": "0.31.11",
+    "eslint": "10.15.0",
+    "typescript": "5.9.3",
+    "vitest": "5.1.1"
+  }
+}
