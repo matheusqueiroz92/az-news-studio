@@ -36,3 +36,31 @@ export type {
   TestCmsConnectionInput,
   TestCmsConnectionSuccess,
 } from './application/test-cms-connection.js';
+
+export {
+  ManageUsers,
+  STUDIO_EMAIL_PATTERN,
+  canonicalEmail,
+} from './application/manage-users.js';
+export type {
+  AuditWriteFailedManageUsersError,
+  ChangeUserRoleCommand,
+  ChangeUserRoleError,
+  CreateUserCommand,
+  CreateUserError,
+  EmailTakenManageUsersError,
+  ForbiddenManageUsersError,
+  InvalidEmailManageUsersError,
+  InvalidRoleManageUsersError,
+  LastAdminManageUsersError,
+  ListUsersCommand,
+  ListUsersError,
+  ManageUsersActor,
+  ManageUsersAuditAction,
+  SetUserActiveCommand,
+  SetUserActiveError,
+  UserChangeRoleAuditDetail,
+  UserCreateAuditDetail,
+  UserNotFoundManageUsersError,
+  UserSetActiveAuditDetail,
+} from './application/manage-users.js';
