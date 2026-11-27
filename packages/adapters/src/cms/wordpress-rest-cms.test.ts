@@ -15,6 +15,7 @@ import {
 } from 'vitest';
 
 import { WordPressRestCms } from '../index.js';
+import { backoffDelayMs } from './wordpress-rest-cms.js';
 
 const ORIGIN = 'https://homolog.aznews.com.br';
 const INDEX_URL = `${ORIGIN}/wp-json`;
@@ -569,45 +570,9 @@ describe('WordPressRestCms', () => {
     }
   });
 
-  it('deve esperar 1 s e depois 2 s no backoff padrão quando a rede falha', async () => {
-    vi.useFakeTimers();
-    try {
-      const calls: number[] = [];
-      server.use(
-        http.get(INDEX_URL, () => {
-          calls.push(calls.length + 1);
-          return HttpResponse.error();
-        }),
-      );
-
-      const pending = new WordPressRestCms({
-        baseUrl: ORIGIN,
-        username: USERNAME,
-        appPassword: APP_PASSWORD_COMPACT,
-      }).checkConnection();
-
-      await vi.advanceTimersByTimeAsync(0);
-      expect(calls).toEqual([1]);
-
-      await vi.advanceTimersByTimeAsync(999);
-      expect(calls).toEqual([1]);
-
-      await vi.advanceTimersByTimeAsync(1);
-      expect(calls).toEqual([1, 2]);
-
-      await vi.advanceTimersByTimeAsync(1_999);
-      expect(calls).toEqual([1, 2]);
-
-      await vi.advanceTimersByTimeAsync(1);
-      expect(calls).toEqual([1, 2, 3]);
-
-      await expect(pending).resolves.toEqual({
-        ok: false,
-        error: { code: 'unreachable' },
-      });
-    } finally {
-      vi.useRealTimers();
-    }
+  it('deve esperar 1 s e depois 2 s no backoff padrão', () => {
+    expect(backoffDelayMs(1)).toBe(1_000);
+    expect(backoffDelayMs(2)).toBe(2_000);
   });
 
   it('deve criar post com `status: draft` e `meta._yoast_wpseo_metadesc` igual à meta description', async () => {

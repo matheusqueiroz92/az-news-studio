@@ -262,10 +262,13 @@ function isWpPostId(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0;
 }
 
+export function backoffDelayMs(attempt: number): number {
+  return 1_000 * 2 ** (attempt - 1);
+}
+
 function defaultBackoff(attempt: number): Promise<void> {
-  const delayMs = 1_000 * 2 ** (attempt - 1);
   return new Promise((resolve) => {
-    setTimeout(resolve, delayMs);
+    setTimeout(resolve, backoffDelayMs(attempt));
   });
 }
 
