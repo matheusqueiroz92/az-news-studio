@@ -9,7 +9,7 @@ Como executar: um chat novo por papel e por tarefa, na ordem numérica. Tarefa d
 
 As recomendações da seção "Decisões em aberto" valem como decisão de trabalho. Se alguma resposta sua for diferente, a tarefa afetada para e o plano é ajustado antes do código.
 
-Teto: cerca de 300 linhas de código (produção + teste) por tarefa. Se a implementação passar disso, dividir antes do commit, sem puxar escopo da tarefa seguinte.
+Teto: cerca de 300 linhas de **código de produção** por tarefa (ajustado em 2026-11-26, revisão da T12). Testes não entram na conta: adaptadores HTTP precisam de muitos cenários, e teste a mais é desejável. Se o código de produção passar do teto, dividir antes do commit, sem puxar escopo da tarefa seguinte.
 
 Fora de todas as tarefas: telas editoriais, S3/MinIO, filas `sources`, `pauta`, `extraction`, `ai`, `social`, `video`, `metrics`, OAuth do MCP, `apps/mcp`, publicação `publish`/`future`.
 
