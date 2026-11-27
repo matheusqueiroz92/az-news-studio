@@ -30,29 +30,29 @@ Fila `cms`. Nome do job `TestCmsConnection`.
 
 Ações gravadas em `audit_log` (não inventar sinônimo noutra tarefa):
 
-| Ação | Quem grava | Channel |
-|---|---|---|
-| `auth.sign_in` | hook de sessão criada do Better Auth na web | `web` |
-| `user.create` | caso de uso `ManageUsers` | `web` |
-| `user.change_role` | `ManageUsers` | `web` |
-| `user.set_active` | `ManageUsers` | `web` |
-| `cms.test_connection.requested` | ação do botão, antes da fila | `web` |
-| `cms.test_connection.completed` | caso de uso `TestCmsConnection` | `worker` |
-| `webhook.post.published` | caso de uso `RecordWordpressWebhook` | `web` |
+| Ação                            | Quem grava                                  | Channel  |
+| ------------------------------- | ------------------------------------------- | -------- |
+| `auth.sign_in`                  | hook de sessão criada do Better Auth na web | `web`    |
+| `user.create`                   | caso de uso `ManageUsers`                   | `web`    |
+| `user.change_role`              | `ManageUsers`                               | `web`    |
+| `user.set_active`               | `ManageUsers`                               | `web`    |
+| `cms.test_connection.requested` | ação do botão, antes da fila                | `web`    |
+| `cms.test_connection.completed` | caso de uso `TestCmsConnection`             | `worker` |
+| `webhook.post.published`        | caso de uso `RecordWordpressWebhook`        | `web`    |
 
 O worker não grava uma segunda linha além da que o caso de uso já gravou.
 
 Rascunho de teste (RF-04), sempre em português:
 
-| Campo | Valor |
-|---|---|
-| title | `[TESTE STUDIO] YYYY-MM-DD` (data de calendário em `America/Sao_Paulo`) |
-| excerpt | `Rascunho de teste do AZ News Studio.` |
-| contentHtml | `<p>Rascunho criado pelo AZ News Studio para testar a conexão. Pode ir para a lixeira.</p>` |
-| slug | `teste-studio-YYYYMMDD-HHmmss` no mesmo fuso |
+| Campo           | Valor                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| title           | `[TESTE STUDIO] YYYY-MM-DD` (data de calendário em `America/Sao_Paulo`)                      |
+| excerpt         | `Rascunho de teste do AZ News Studio.`                                                       |
+| contentHtml     | `<p>Rascunho criado pelo AZ News Studio para testar a conexão. Pode ir para a lixeira.</p>`  |
+| slug            | `teste-studio-YYYYMMDD-HHmmss` no mesmo fuso                                                 |
 | metaDescription | `Rascunho automático do AZ News Studio para testar a conexão com o WordPress. Não publicar.` |
-| categoryIds | `[]` (o adaptador omite `categories` no JSON para o WordPress aplicar a categoria padrão) |
-| tagNames | `[]` |
+| categoryIds     | `[]` (o adaptador omite `categories` no JSON para o WordPress aplicar a categoria padrão)    |
+| tagNames        | `[]`                                                                                         |
 
 `trashPost` é `DELETE /wp-json/wp/v2/posts/:id` sem `force=true` (lixeira, não exclusão definitiva).
 
@@ -586,12 +586,14 @@ Verificação manual desta tarefa: seed aplicado, pedir link do admin, abrir o M
   - `apps/web/src/app/conexoes/actions.ts`
   - `apps/web/src/app/conexoes/actions.test.ts`
   - `apps/web/src/server/container.ts`
+- O botão "Testar conexão" publica o `TestCmsConnection` **sem `jobId`** (ou com um id único por clique). Um id fixo faz o BullMQ descartar o segundo teste enquanto o primeiro estiver retido no Redis (até 24 h), e a publicação ainda devolveria `ok`.
 - Testes esperados:
   - deve recusar a ação quando a sessão não é admin
   - deve expor alcançável, autenticado, versão do bridge e nome do site a partir de `checkConnection`
   - deve enfileirar `TestCmsConnection` na fila `cms` com o id do usuário
   - deve gravar `cms.test_connection.requested` antes de confirmar o enfileiramento
   - deve gravar falha dessa ação quando a fila recusa, sem dizer que o teste foi executado
+  - deve executar um novo teste de conexão a cada clique, mesmo logo após um teste concluído
 - Critério de pronto: a página não chama `createDraft` no processo do Next (quem cria o rascunho é o worker); mensagens em português; editor e sales não abrem a rota.
 - Requisitos: RF-03, RF-04, RF-06.
 - Commit sugerido: `feat(web): mostra a conexão com o WordPress e enfileira o teste`
@@ -701,13 +703,13 @@ Ordem prática: implementar a T25 logo depois da T02, para a branch já nascer c
 - Arquivos: nenhum.
 - Verificação: cada linha abaixo tem pedido enviado (e, quando couber, limite de gasto ou auditoria já solicitados).
 
-| Conta / acesso | Para quê | O que conferir no pedido |
-|---|---|---|
-| Chave da API do Claude (Anthropic Console) | Fases 1A e 1B | Limite de gasto mensal definido no console |
-| Projeto no Google Cloud com YouTube Data API v3 | Fase 4 | Auditoria de conformidade pedida no mesmo momento; vídeo de projeto não auditado fica privado |
-| GA4 Data API e Search Console API nesse projeto | Fase 3 | OAuth com a conta dona das propriedades |
-| App no Meta for Developers, com @canalaznews profissional | Fase 2 | Acesso padrão para publicar nas contas da própria empresa; se a Página do Facebook exige Page Publishing Authorization, anotar |
-| Usuário `studio` no WordPress, papel Editor, com Application Password | Fase 0, na homologação (o local sai na T16) | Senha só no `.env` |
+| Conta / acesso                                                        | Para quê                                    | O que conferir no pedido                                                                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Chave da API do Claude (Anthropic Console)                            | Fases 1A e 1B                               | Limite de gasto mensal definido no console                                                                                     |
+| Projeto no Google Cloud com YouTube Data API v3                       | Fase 4                                      | Auditoria de conformidade pedida no mesmo momento; vídeo de projeto não auditado fica privado                                  |
+| GA4 Data API e Search Console API nesse projeto                       | Fase 3                                      | OAuth com a conta dona das propriedades                                                                                        |
+| App no Meta for Developers, com @canalaznews profissional             | Fase 2                                      | Acesso padrão para publicar nas contas da própria empresa; se a Página do Facebook exige Page Publishing Authorization, anotar |
+| Usuário `studio` no WordPress, papel Editor, com Application Password | Fase 0, na homologação (o local sai na T16) | Senha só no `.env`                                                                                                             |
 
 - Critério de pronto: os cinco pedidos existem. A chave e as senhas não entram no git.
 - Requisitos: seção 8.1 da spec. Nenhum RF de runtime depende desta tarefa para a Fase 0 fechar, exceto o usuário `studio` da homologação, que a T26 também cobra.
@@ -733,41 +735,41 @@ A T25 fica no fim da lista porque o deploy depende dela, mas o commit dela é lo
 
 ### Requisitos funcionais
 
-| Requisito | Tarefas |
-|---|---|
-| RF-01 Login por link mágico; só e-mail cadastrado | T05, T09, T11, T19, T20 |
-| RF-02 Papéis admin, editor, sales; admin gerencia usuários | T03, T05, T08, T09, T11, T20 |
-| RF-03 Página Conexões com alcançável, autenticado e versão do bridge | T12, T21 |
-| RF-04 Botão enfileira job que cria o rascunho `[TESTE STUDIO]` com meta description e manda à lixeira | T04, T13, T14, T15, T17, T21 |
-| RF-05 `POST /api/webhooks/wordpress`, HMAC, `post.published` no audit log | T06, T07, T10, T15, T16, T22 |
-| RF-06 Toda ação de usuário e todo job externo no audit log | T03, T04, T05, T07, T11, T17, T19, T20, T21, T22 |
+| Requisito                                                                                             | Tarefas                                          |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| RF-01 Login por link mágico; só e-mail cadastrado                                                     | T05, T09, T11, T19, T20                          |
+| RF-02 Papéis admin, editor, sales; admin gerencia usuários                                            | T03, T05, T08, T09, T11, T20                     |
+| RF-03 Página Conexões com alcançável, autenticado e versão do bridge                                  | T12, T21                                         |
+| RF-04 Botão enfileira job que cria o rascunho `[TESTE STUDIO]` com meta description e manda à lixeira | T04, T13, T14, T15, T17, T21                     |
+| RF-05 `POST /api/webhooks/wordpress`, HMAC, `post.published` no audit log                             | T06, T07, T10, T15, T16, T22                     |
+| RF-06 Toda ação de usuário e todo job externo no audit log                                            | T03, T04, T05, T07, T11, T17, T19, T20, T21, T22 |
 
 ### Critérios de aceitação
 
-| Critério | Tarefas |
-|---|---|
-| `pnpm dev` sobe web, worker, Postgres, Redis, Mailpit e WordPress local | T09, T16, T17, T18, T23 |
-| Link mágico aceita cadastrado e recusa o resto | T05, T09, T19, T20, T26 (e-mail real em produção) |
-| "Testar conexão" cria e apaga o rascunho na homologação, com meta description visível no Yoast | T04, T13, T15, T17, T21, T26 |
-| Publicar na homologação gera `post.published` no audit log em até 10 s; assinatura inválida responde 401 | T06, T07, T10, T15, T22, T26 |
-| Lint de fronteiras falha se `core` importar `adapters` | T02 |
-| CI verde na `main`; app em `https://studio.aznews.com.br` | T25, T24, T26 |
+| Critério                                                                                                 | Tarefas                                           |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `pnpm dev` sobe web, worker, Postgres, Redis, Mailpit e WordPress local                                  | T09, T16, T17, T18, T23                           |
+| Link mágico aceita cadastrado e recusa o resto                                                           | T05, T09, T19, T20, T26 (e-mail real em produção) |
+| "Testar conexão" cria e apaga o rascunho na homologação, com meta description visível no Yoast           | T04, T13, T15, T17, T21, T26                      |
+| Publicar na homologação gera `post.published` no audit log em até 10 s; assinatura inválida responde 401 | T06, T07, T10, T15, T22, T26                      |
+| Lint de fronteiras falha se `core` importar `adapters`                                                   | T02                                               |
+| CI verde na `main`; app em `https://studio.aznews.com.br`                                                | T25, T24, T26                                     |
 
 ### Requisitos não funcionais
 
-| Requisito | Tarefas |
-|---|---|
-| TypeScript strict | T01 |
-| Cobertura de linhas ≥ 90% em `packages/core` | T03 (limiar) e T04, T05, T07 |
-| `eslint-plugin-boundaries` | T02 |
-| Segredos só em ambiente; `.env.example` completo | T01, e qualquer tarefa que crie variável nova |
-| `GET /api/health` | T18 |
-| Heartbeat do worker no Redis | T17 |
-| Logs JSON (pino) | T17, T18 |
-| Postgres com pgvector | T08, T09 |
-| Compose de dev e de prod, Dockerfiles | T09, T16, T24 |
-| CI lint, typecheck, test, sem deploy automático | T25 |
-| Plugin PHP ≥ 8.1, WordPress ≥ 6.4, sem efeito no front | T15, T16 |
+| Requisito                                              | Tarefas                                       |
+| ------------------------------------------------------ | --------------------------------------------- |
+| TypeScript strict                                      | T01                                           |
+| Cobertura de linhas ≥ 90% em `packages/core`           | T03 (limiar) e T04, T05, T07                  |
+| `eslint-plugin-boundaries`                             | T02                                           |
+| Segredos só em ambiente; `.env.example` completo       | T01, e qualquer tarefa que crie variável nova |
+| `GET /api/health`                                      | T18                                           |
+| Heartbeat do worker no Redis                           | T17                                           |
+| Logs JSON (pino)                                       | T17, T18                                      |
+| Postgres com pgvector                                  | T08, T09                                      |
+| Compose de dev e de prod, Dockerfiles                  | T09, T16, T24                                 |
+| CI lint, typecheck, test, sem deploy automático        | T25                                           |
+| Plugin PHP ≥ 8.1, WordPress ≥ 6.4, sem efeito no front | T15, T16                                      |
 
 ## Dívida técnica registrada
 
@@ -797,31 +799,31 @@ Não há conflito entre "o teste cria rascunho" e o ADR 0004. O ADR troca a regr
 
 Responda só o que quiser mudar. O resto fica como está.
 
-| # | Pergunta | Recomendação |
-|---|---|---|
-| D1 | Nome dos pacotes npm | Escopo privado `@az-news/core`, `@az-news/contracts`, `@az-news/db`, `@az-news/adapters`, `@az-news/config`, `@az-news/web`, `@az-news/worker`. Raiz `az-news-studio`, `private: true`. Não publicar no npm. |
-| D2 | pnpm | Linha 10, patch pinado no campo `packageManager` no dia da T01. A latest do registry hoje é 12.23.0; ficar na 10 nesta fase. |
-| D3 | TypeScript | `5.9.3`. A latest `7.0.2` não passa no peer do typescript-eslint. ADR 0002 manda a linha 5. |
-| D4 | Next, React | `next@16.4.6`, `react` e `react-dom@19.3.1`. Turbopack já é o padrão do `next dev`; não passar `--turbopack`. |
-| D5 | Autenticação | **Decidido: Better Auth** ([ADR 0006](../../docs/adr/0006-better-auth.md)), última versão estável conferida no registry no dia da T08, pinada sem range e sem beta. Adaptador Drizzle com `usePlural: true`, plugin de link mágico com criação automática desligada, sem o plugin `admin`. |
-| D6 | Nodemailer | Usado diretamente em `sendMagicLink` (sem peer de biblioteca de auth). Pinar a versão estável atual no dia da T19. |
-| D7 | Usuário inativo | Coluna `active`. Admin desativa; login recusa inativo; não apagar linha. Ver problema 3. |
-| D8 | Quem vê Conexões e Usuários | Só `admin`. |
-| D9 | Primeiro admin | `SEED_ADMIN_EMAIL`. Roda com `pnpm db:seed` só se ainda não houver usuário. |
-| D10 | `CmsPostId` | String opaca no domínio. Ver nota na T04. |
-| D11 | Zod | `4.6.7` em todo o monorepo, uma versão só. |
-| D12 | Drizzle e driver | `drizzle-orm@0.45.4`, `drizzle-kit@0.31.11`, driver `pg@8.23.1` (`drizzle-orm/node-postgres`). |
-| D13 | Teste de repositório | `@electric-sql/pglite@0.6.0` no `pnpm test`, para o CI não depender de Docker. |
-| D14 | BullMQ e Redis | `bullmq@6.7.8`, `ioredis@6.1.0`. |
-| D15 | HTTP de teste e log | `msw@3.0.7`, `pino@10.4.0`. `pino-pretty` só em dev. |
-| D16 | Vitest, Turbo, ESLint, Prettier | `vitest@5.1.1`, `@vitest/coverage-v8@5.1.1`, `turbo@2.11.13`, `eslint@10.15.0`, `typescript-eslint@8.74.0`, `eslint-plugin-boundaries@7.4.4`, `eslint-config-prettier@10.1.8`, `prettier@3.10.1`. |
-| D17 | Tipos do Node | `@types/node` na linha 24, não a latest 26, para combinar com o runtime do ADR. |
-| D18 | Worker em produção | Dev com `tsx@4.23.15`. Imagem com `tsup@9.0.0`. |
-| D19 | Imagens Docker já confirmadas em 2026-11-23 | `pgvector/pgvector:pg16` (a spec fixa esta tag), `redis:7.4.12-alpine`, `wordpress:7.1.5-php8.3-apache`. |
-| D20 | Mailpit, MariaDB, wp-cli, Node da imagem | Pinagem semver na tarefa que cria o arquivo, nunca `latest`. MariaDB na linha 11.8. `wordpress:cli` alinhada ao WordPress 7.1.5. Node `24` com patch escrito no Dockerfile. |
-| D21 | Versões no package.json | Exatas, sem `^`. Lockfile commitado. CI com `--frozen-lockfile`. |
-| D22 | Sucesso e corpo inválido do webhook | 204 e 400. Ver problema 8. |
-| D23 | Retry de `createDraft` | **Revisada em 2026-11-26 (T13):** o POST repete (até 3 vezes) **somente** quando a conexão não chega a ser estabelecida (DNS ou conexão recusada), porque aí é certo que o WordPress não recebeu nada. Timeout, `ECONNRESET`, erro de rede genérico e qualquer resposta HTTP **não** repetem: o servidor pode ter gravado o post, e repetir criaria duplicata (na Fase 1A, matéria publicada duas vezes). A lixeira (DELETE) e o `checkConnection` (GET) repetem até 3 vezes em qualquer falha sem resposta HTTP, porque são idempotentes. O job `TestCmsConnection` roda com uma única tentativa (nota da T14): timeout no rascunho encerra o teste, e o admin repete pelo botão. |
-| D24 | `WP_*` de produção | Homologação até o fim da Fase 1. Produção do aznews.com.br fica fora do `.env` do Studio. |
+| #   | Pergunta                                    | Recomendação                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Nome dos pacotes npm                        | Escopo privado `@az-news/core`, `@az-news/contracts`, `@az-news/db`, `@az-news/adapters`, `@az-news/config`, `@az-news/web`, `@az-news/worker`. Raiz `az-news-studio`, `private: true`. Não publicar no npm.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| D2  | pnpm                                        | Linha 10, patch pinado no campo `packageManager` no dia da T01. A latest do registry hoje é 12.23.0; ficar na 10 nesta fase.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| D3  | TypeScript                                  | `5.9.3`. A latest `7.0.2` não passa no peer do typescript-eslint. ADR 0002 manda a linha 5.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D4  | Next, React                                 | `next@16.4.6`, `react` e `react-dom@19.3.1`. Turbopack já é o padrão do `next dev`; não passar `--turbopack`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| D5  | Autenticação                                | **Decidido: Better Auth** ([ADR 0006](../../docs/adr/0006-better-auth.md)), última versão estável conferida no registry no dia da T08, pinada sem range e sem beta. Adaptador Drizzle com `usePlural: true`, plugin de link mágico com criação automática desligada, sem o plugin `admin`.                                                                                                                                                                                                                                                                                                                                                                                         |
+| D6  | Nodemailer                                  | Usado diretamente em `sendMagicLink` (sem peer de biblioteca de auth). Pinar a versão estável atual no dia da T19.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| D7  | Usuário inativo                             | Coluna `active`. Admin desativa; login recusa inativo; não apagar linha. Ver problema 3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| D8  | Quem vê Conexões e Usuários                 | Só `admin`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D9  | Primeiro admin                              | `SEED_ADMIN_EMAIL`. Roda com `pnpm db:seed` só se ainda não houver usuário.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D10 | `CmsPostId`                                 | String opaca no domínio. Ver nota na T04.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| D11 | Zod                                         | `4.6.7` em todo o monorepo, uma versão só.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| D12 | Drizzle e driver                            | `drizzle-orm@0.45.4`, `drizzle-kit@0.31.11`, driver `pg@8.23.1` (`drizzle-orm/node-postgres`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| D13 | Teste de repositório                        | `@electric-sql/pglite@0.6.0` no `pnpm test`, para o CI não depender de Docker.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| D14 | BullMQ e Redis                              | `bullmq@6.7.8`, `ioredis@6.1.0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| D15 | HTTP de teste e log                         | `msw@3.0.7`, `pino@10.4.0`. `pino-pretty` só em dev.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| D16 | Vitest, Turbo, ESLint, Prettier             | `vitest@5.1.1`, `@vitest/coverage-v8@5.1.1`, `turbo@2.11.13`, `eslint@10.15.0`, `typescript-eslint@8.74.0`, `eslint-plugin-boundaries@7.4.4`, `eslint-config-prettier@10.1.8`, `prettier@3.10.1`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| D17 | Tipos do Node                               | `@types/node` na linha 24, não a latest 26, para combinar com o runtime do ADR.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| D18 | Worker em produção                          | Dev com `tsx@4.23.15`. Imagem com `tsup@9.0.0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| D19 | Imagens Docker já confirmadas em 2026-11-23 | `pgvector/pgvector:pg16` (a spec fixa esta tag), `redis:7.4.12-alpine`, `wordpress:7.1.5-php8.3-apache`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| D20 | Mailpit, MariaDB, wp-cli, Node da imagem    | Pinagem semver na tarefa que cria o arquivo, nunca `latest`. MariaDB na linha 11.8. `wordpress:cli` alinhada ao WordPress 7.1.5. Node `24` com patch escrito no Dockerfile.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| D21 | Versões no package.json                     | Exatas, sem `^`. Lockfile commitado. CI com `--frozen-lockfile`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| D22 | Sucesso e corpo inválido do webhook         | 204 e 400. Ver problema 8.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| D23 | Retry de `createDraft`                      | **Revisada em 2026-11-26 (T13):** o POST repete (até 3 vezes) **somente** quando a conexão não chega a ser estabelecida (DNS ou conexão recusada), porque aí é certo que o WordPress não recebeu nada. Timeout, `ECONNRESET`, erro de rede genérico e qualquer resposta HTTP **não** repetem: o servidor pode ter gravado o post, e repetir criaria duplicata (na Fase 1A, matéria publicada duas vezes). A lixeira (DELETE) e o `checkConnection` (GET) repetem até 3 vezes em qualquer falha sem resposta HTTP, porque são idempotentes. O job `TestCmsConnection` roda com uma única tentativa (nota da T14): timeout no rascunho encerra o teste, e o admin repete pelo botão. |
+| D24 | `WP_*` de produção                          | Homologação até o fim da Fase 1. Produção do aznews.com.br fica fora do `.env` do Studio.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 Pacotes conferidos no registry em 2026-11-23. A T01 grava esses números; se no dia da tarefa o patch tiver subido, usar o patch novo da mesma linha menor e anotar no commit, sem trocar de major.
