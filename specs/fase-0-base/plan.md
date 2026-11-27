@@ -404,7 +404,8 @@ Banco e usuário do compose de dev: `studio` / senha só no `.env`, nunca no arq
   - deve enviar título, resumo, conteúdo e slug
   - deve omitir `categories` quando a lista vem vazia
   - deve devolver `draft_failed` quando o WordPress responde 4xx ou 5xx, sem repetir o POST
-  - deve repetir o POST só quando a conexão cai antes de qualquer resposta HTTP
+  - deve repetir o POST (até 3 vezes, com backoff) somente quando a conexão não chega a ser estabelecida: DNS (`ENOTFOUND`, `EAI_AGAIN`) ou conexão recusada (`ECONNREFUSED`)
+  - deve não repetir o POST em timeout, conexão derrubada no meio (`ECONNRESET`), erro de rede genérico ou qualquer resposta HTTP, porque o WordPress pode ter gravado o post
   - deve chamar `DELETE /wp-json/wp/v2/posts/:id` sem `force=true`
   - deve repetir o DELETE em falha de rede, no máximo 3 vezes
   - deve devolver `trash_failed` quando o DELETE responde erro HTTP
@@ -820,7 +821,7 @@ Responda só o que quiser mudar. O resto fica como está.
 | D20 | Mailpit, MariaDB, wp-cli, Node da imagem | Pinagem semver na tarefa que cria o arquivo, nunca `latest`. MariaDB na linha 11.8. `wordpress:cli` alinhada ao WordPress 7.1.5. Node `24` com patch escrito no Dockerfile. |
 | D21 | Versões no package.json | Exatas, sem `^`. Lockfile commitado. CI com `--frozen-lockfile`. |
 | D22 | Sucesso e corpo inválido do webhook | 204 e 400. Ver problema 8. |
-| D23 | Retry de `createDraft` | Repetir só se não houve resposta HTTP. 4xx/5xx não repetem, para não criar dois rascunhos. A lixeira e o `checkConnection` repetem até 3 vezes. O job no BullMQ também tem 3 tentativas: um retry do job inteiro pode deixar rascunho extra na lixeira. Aceitar isso na Fase 0. |
+| D23 | Retry de `createDraft` | **Revisada em 2026-11-26 (T13):** o POST repete (até 3 vezes) **somente** quando a conexão não chega a ser estabelecida (DNS ou conexão recusada), porque aí é certo que o WordPress não recebeu nada. Timeout, `ECONNRESET`, erro de rede genérico e qualquer resposta HTTP **não** repetem: o servidor pode ter gravado o post, e repetir criaria duplicata (na Fase 1A, matéria publicada duas vezes). A lixeira (DELETE) e o `checkConnection` (GET) repetem até 3 vezes em qualquer falha sem resposta HTTP, porque são idempotentes. O job `TestCmsConnection` roda com uma única tentativa (nota da T14): timeout no rascunho encerra o teste, e o admin repete pelo botão. |
 | D24 | `WP_*` de produção | Homologação até o fim da Fase 1. Produção do aznews.com.br fica fora do `.env` do Studio. |
 
 Pacotes conferidos no registry em 2026-11-23. A T01 grava esses números; se no dia da tarefa o patch tiver subido, usar o patch novo da mesma linha menor e anotar no commit, sem trocar de major.
