@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+
+import type { CmsDraftInput } from '@az-news/core';
 import { http, HttpResponse } from 'msw/http';
 import { setupServer } from 'msw/node';
 import { delay } from 'msw/utils/delay';
@@ -17,6 +20,7 @@ const ORIGIN = 'https://homolog.aznews.com.br';
 const INDEX_URL = `${ORIGIN}/wp-json`;
 const ME_URL = `${ORIGIN}/wp-json/wp/v2/users/me`;
 const HEALTH_URL = `${ORIGIN}/wp-json/az-bridge/v1/health`;
+const POSTS_URL = `${ORIGIN}/wp-json/wp/v2/posts`;
 
 const USERNAME = 'studio';
 const APP_PASSWORD_SPACED = 'abcd efgh ijkl mnop';
@@ -91,6 +95,40 @@ function restoreEnv(name: string, value: string | undefined): void {
     return;
   }
   process.env[name] = value;
+}
+
+const META_DESCRIPTION =
+  'Rascunho automático do AZ News Studio para testar a conexão com o WordPress. Não publicar.';
+
+function draftInput(overrides?: Partial<CmsDraftInput>): CmsDraftInput {
+  return {
+    title: '[TESTE STUDIO] 2026-11-26',
+    excerpt: 'Rascunho de teste do AZ News Studio.',
+    contentHtml:
+      '<p>Rascunho criado pelo AZ News Studio para testar a conexão. Pode ir para a lixeira.</p>',
+    slug: 'teste-studio-20261126-211500',
+    metaDescription: META_DESCRIPTION,
+    categoryIds: [],
+    tagNames: [],
+    ...overrides,
+  };
+}
+
+/**
+ * O msw trata o erro como exceção do handler e escreve no stderr.
+ * O fetch rejeita com `cause.code`, que é o que o adaptador lê.
+ */
+function socketError(code: string): Error {
+  return Object.assign(new Error(code), { code, errno: -1 });
+}
+
+async function silencingHandlerNoise<T>(run: () => Promise<T>): Promise<T> {
+  const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    return await run();
+  } finally {
+    spy.mockRestore();
+  }
 }
 
 describe('WordPressRestCms', () => {
@@ -570,5 +608,453 @@ describe('WordPressRestCms', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('deve criar post com `status: draft` e `meta._yoast_wpseo_metadesc` igual à meta description', async () => {
+    let body: unknown;
+    let authorization: string | null = null;
+    server.use(
+      http.post(POSTS_URL, async ({ request }) => {
+        authorization = request.headers.get('authorization');
+        body = await request.json();
+        return HttpResponse.json({ id: 4821 }, { status: 201 });
+      }),
+    );
+
+    await expect(createCms().createDraft(draftInput())).resolves.toEqual({
+      ok: true,
+      value: { id: '4821' },
+    });
+    expect(authorization).toBe(
+      authorizationHeader(USERNAME, APP_PASSWORD_COMPACT),
+    );
+    expect(body).toMatchObject({
+      status: 'draft',
+      meta: { _yoast_wpseo_metadesc: META_DESCRIPTION },
+    });
+  });
+
+  it('deve enviar título, resumo, conteúdo e slug', async () => {
+    let body: unknown;
+    const input = draftInput();
+    server.use(
+      http.post(POSTS_URL, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ id: 15 }, { status: 201 });
+      }),
+    );
+
+    await createCms().createDraft(input);
+
+    expect(body).toMatchObject({
+      title: input.title,
+      excerpt: input.excerpt,
+      content: input.contentHtml,
+      slug: input.slug,
+    });
+  });
+
+  it('deve omitir `categories` quando a lista vem vazia', async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.post(POSTS_URL, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 15 }, { status: 201 });
+      }),
+    );
+
+    await createCms().createDraft(
+      draftInput({ categoryIds: [], tagNames: ['politica'] }),
+    );
+
+    expect(body).toBeDefined();
+    expect(body).not.toHaveProperty('categories');
+    expect(body).not.toHaveProperty('tags');
+  });
+
+  it('deve enviar `categories` quando a lista tem ids', async () => {
+    let body: unknown;
+    server.use(
+      http.post(POSTS_URL, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ id: 15 }, { status: 201 });
+      }),
+    );
+
+    await createCms().createDraft(draftInput({ categoryIds: [3, 8] }));
+
+    expect(body).toMatchObject({ categories: [3, 8] });
+  });
+
+  it('deve devolver `draft_failed` quando o WordPress responde 4xx ou 5xx, sem repetir o POST', async () => {
+    for (const status of [400, 403, 422, 500, 503]) {
+      let calls = 0;
+      server.use(
+        http.post(POSTS_URL, () => {
+          calls += 1;
+          return HttpResponse.json({ code: 'rest_error' }, { status });
+        }),
+      );
+
+      await expect(createCms().createDraft(draftInput())).resolves.toEqual({
+        ok: false,
+        error: { code: 'draft_failed' },
+      });
+      expect(calls).toBe(1);
+      server.resetHandlers();
+    }
+  });
+
+  it('deve devolver `unauthenticated` quando o POST responde 401, sem repetir', async () => {
+    let calls = 0;
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        return HttpResponse.json(
+          { code: 'rest_not_logged_in', data: { status: 401 } },
+          { status: 401 },
+        );
+      }),
+    );
+
+    await expect(createCms().createDraft(draftInput())).resolves.toEqual({
+      ok: false,
+      error: { code: 'unauthenticated' },
+    });
+    expect(calls).toBe(1);
+  });
+
+  it('deve devolver `invalid_response` quando o id criado não é um inteiro positivo', async () => {
+    for (const payload of [
+      {},
+      { id: '4821' },
+      { id: 0 },
+      { id: 1.5 },
+      { id: null },
+    ]) {
+      server.use(
+        http.post(POSTS_URL, () => HttpResponse.json(payload, { status: 201 })),
+      );
+
+      await expect(createCms().createDraft(draftInput())).resolves.toEqual({
+        ok: false,
+        error: { code: 'invalid_response' },
+      });
+      server.resetHandlers();
+    }
+  });
+
+  it('deve não repetir o POST quando há timeout', async () => {
+    let calls = 0;
+    const backoffs: number[] = [];
+    server.use(
+      http.post(POSTS_URL, async () => {
+        calls += 1;
+        await delay(1_000);
+        return HttpResponse.json({ id: 1 }, { status: 201 });
+      }),
+    );
+
+    await expect(
+      createCms({
+        timeoutMs: 50,
+        backoff: async () => {
+          backoffs.push(1);
+        },
+      }).createDraft(draftInput()),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(1);
+    expect(backoffs).toEqual([]);
+  });
+
+  it('deve repetir o POST quando a conexão é recusada', async () => {
+    let calls = 0;
+    const backoffs: number[] = [];
+    const cms = createCms({
+      backoff: async () => {
+        backoffs.push(backoffs.length + 1);
+      },
+    });
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        throw socketError('ECONNREFUSED');
+      }),
+    );
+
+    await expect(
+      silencingHandlerNoise(() => cms.createDraft(draftInput())),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(3);
+    expect(backoffs).toEqual([1, 2]);
+
+    calls = 0;
+    backoffs.length = 0;
+    server.resetHandlers();
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        if (calls < 3) {
+          throw socketError('ECONNREFUSED');
+        }
+        return HttpResponse.json({ id: 77 }, { status: 201 });
+      }),
+    );
+
+    await expect(
+      silencingHandlerNoise(() => cms.createDraft(draftInput())),
+    ).resolves.toEqual({
+      ok: true,
+      value: { id: '77' },
+    });
+    expect(calls).toBe(3);
+  });
+
+  it.each(['ENOTFOUND', 'EAI_AGAIN'] as const)(
+    'deve repetir o POST quando o DNS falha com %s',
+    async (code) => {
+      let calls = 0;
+      server.use(
+        http.post(POSTS_URL, () => {
+          calls += 1;
+          throw socketError(code);
+        }),
+      );
+
+      await expect(
+        silencingHandlerNoise(() =>
+          createCms({ backoff: async () => {} }).createDraft(draftInput()),
+        ),
+      ).resolves.toEqual({
+        ok: false,
+        error: { code: 'unreachable' },
+      });
+      expect(calls).toBe(3);
+    },
+  );
+
+  it('deve repetir o POST só quando a conexão cai antes de qualquer resposta HTTP', async () => {
+    let calls = 0;
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        return HttpResponse.json({ code: 'rest_error' }, { status: 500 });
+      }),
+    );
+
+    await expect(
+      createCms({ backoff: async () => {} }).createDraft(draftInput()),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'draft_failed' },
+    });
+    expect(calls).toBe(1);
+
+    calls = 0;
+    server.resetHandlers();
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        return HttpResponse.error();
+      }),
+    );
+
+    await expect(
+      createCms({ backoff: async () => {} }).createDraft(draftInput()),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(1);
+
+    calls = 0;
+    server.resetHandlers();
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        throw socketError('ECONNRESET');
+      }),
+    );
+
+    await expect(
+      silencingHandlerNoise(() =>
+        createCms({ backoff: async () => {} }).createDraft(draftInput()),
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(1);
+
+    calls = 0;
+    server.resetHandlers();
+    server.use(
+      http.post(POSTS_URL, () => {
+        calls += 1;
+        throw socketError('ECONNREFUSED');
+      }),
+    );
+
+    await expect(
+      silencingHandlerNoise(() =>
+        createCms({ backoff: async () => {} }).createDraft(draftInput()),
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(3);
+  });
+
+  it('deve chamar `DELETE /wp-json/wp/v2/posts/:id` sem `force=true`', async () => {
+    let seen:
+      | {
+          url: string;
+          method: string;
+          authorization: string | null;
+          body: string;
+        }
+      | undefined;
+    server.use(
+      http.delete(`${POSTS_URL}/:id`, async ({ request }) => {
+        seen = {
+          url: request.url,
+          method: request.method,
+          authorization: request.headers.get('authorization'),
+          body: await request.text(),
+        };
+        return HttpResponse.json({ id: 91, status: 'trash' });
+      }),
+    );
+
+    await expect(createCms().trashPost('91')).resolves.toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(seen).toBeDefined();
+    expect(seen?.method).toBe('DELETE');
+    expect(seen?.url).toBe(`${POSTS_URL}/91`);
+    expect(new URL(seen?.url ?? '').searchParams.has('force')).toBe(false);
+    expect(seen?.url).not.toContain('force');
+    expect(seen?.authorization).toBe(
+      authorizationHeader(USERNAME, APP_PASSWORD_COMPACT),
+    );
+    expect(seen?.body).toBe('');
+  });
+
+  it('deve repetir o DELETE em falha de rede, no máximo 3 vezes', async () => {
+    let calls = 0;
+    const backoffs: number[] = [];
+    server.use(
+      http.delete(`${POSTS_URL}/:id`, () => {
+        calls += 1;
+        return HttpResponse.error();
+      }),
+    );
+
+    await expect(
+      createCms({
+        backoff: async () => {
+          backoffs.push(1);
+        },
+      }).trashPost('91'),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(3);
+    expect(backoffs).toHaveLength(2);
+
+    calls = 0;
+    server.resetHandlers();
+    server.use(
+      http.delete(`${POSTS_URL}/:id`, () => {
+        calls += 1;
+        if (calls === 1) {
+          return HttpResponse.error();
+        }
+        return HttpResponse.json({ id: 91, status: 'trash' });
+      }),
+    );
+
+    await expect(
+      createCms({ backoff: async () => {} }).trashPost('91'),
+    ).resolves.toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(calls).toBe(2);
+  });
+
+  it('deve repetir o DELETE quando há timeout, no máximo 3 vezes', async () => {
+    let calls = 0;
+    server.use(
+      http.delete(`${POSTS_URL}/:id`, async () => {
+        calls += 1;
+        await delay(1_000);
+        return HttpResponse.json({ id: 91, status: 'trash' });
+      }),
+    );
+
+    await expect(
+      createCms({ timeoutMs: 50, backoff: async () => {} }).trashPost('91'),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'unreachable' },
+    });
+    expect(calls).toBe(3);
+  });
+
+  it('deve devolver `trash_failed` quando o DELETE responde erro HTTP', async () => {
+    for (const status of [400, 404, 500]) {
+      let calls = 0;
+      server.use(
+        http.delete(`${POSTS_URL}/:id`, () => {
+          calls += 1;
+          return HttpResponse.json({ code: 'rest_error' }, { status });
+        }),
+      );
+
+      await expect(createCms().trashPost('91')).resolves.toEqual({
+        ok: false,
+        error: { code: 'trash_failed' },
+      });
+      expect(calls).toBe(1);
+      server.resetHandlers();
+    }
+  });
+
+  it('deve devolver `unauthenticated` quando o DELETE responde 401, sem repetir', async () => {
+    let calls = 0;
+    server.use(
+      http.delete(`${POSTS_URL}/:id`, () => {
+        calls += 1;
+        return HttpResponse.json(
+          { code: 'rest_not_logged_in' },
+          { status: 401 },
+        );
+      }),
+    );
+
+    await expect(createCms().trashPost('91')).resolves.toEqual({
+      ok: false,
+      error: { code: 'unauthenticated' },
+    });
+    expect(calls).toBe(1);
+  });
+
+  it('deve manter o meta do Yoast fora dos tipos exportados', () => {
+    const source = readFileSync(
+      new URL('../index.ts', import.meta.url),
+      'utf8',
+    );
+    expect(source).not.toContain('_yoast');
+    expect(source).not.toContain('metadesc');
   });
 });
