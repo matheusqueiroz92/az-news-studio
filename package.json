@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:integration": "pnpm --filter @az-news/adapters test:integration",
     "db:migrate": "pnpm --filter @az-news/db migrate",
     "db:seed": "pnpm --filter @az-news/db seed",
     "infra:up": "docker compose --env-file .env -f infra/docker-compose.dev.yml up -d",

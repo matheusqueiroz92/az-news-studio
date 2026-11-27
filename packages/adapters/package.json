@@ -9,7 +9,8 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@az-news/core": "workspace:*",
@@ -22,6 +23,7 @@
     "@types/node": "24.19.2",
     "@vitest/coverage-v8": "5.1.1",
     "eslint": "10.15.0",
+    "msw": "3.0.7",
     "typescript": "5.9.3",
     "vitest": "5.1.1"
   }
