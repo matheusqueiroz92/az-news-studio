@@ -36,12 +36,12 @@ Spec-Driven Development: toda funcionalidade nasce de uma spec em `specs/`, com 
 
 ## WordPress local
 
-O WordPress de desenvolvimento fica num profile do Compose. `pnpm infra:up` sobe só Postgres, Redis e Mailpit.
+O WordPress de desenvolvimento está em `infra/docker-compose.wordpress.yml`, num projeto Compose separado. `pnpm infra:up` sobe só Postgres, Redis e Mailpit e não lê as variáveis do WordPress.
 
 1. Copie `WORDPRESS_DB_NAME`, `WORDPRESS_DB_USER`, `WORDPRESS_DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`, `WP_BASE_URL`, `WP_ADMIN_PASSWORD` e `WP_WEBHOOK_SECRET` do `.env.example` para o `.env` e troque as senhas. Num WordPress já instalado, o setup não altera a senha do admin.
 2. `pnpm wp:up`
 3. `pnpm wp:setup`. Na primeira vez, cole a senha impressa em `WP_APP_PASSWORD`. Rodar de novo não cria outro usuário nem outra senha.
-4. `pnpm wp:down` para o WordPress e o MariaDB. O volume e o resto da infra ficam.
+4. `pnpm wp:down` para o WordPress e o MariaDB. O volume deles fica. Postgres, Redis e Mailpit não são derrubados.
 
 O site local é [http://127.0.0.1:8080](http://127.0.0.1:8080). O health do AZ Bridge é [http://127.0.0.1:8080/wp-json/az-bridge/v1/health](http://127.0.0.1:8080/wp-json/az-bridge/v1/health).
 
