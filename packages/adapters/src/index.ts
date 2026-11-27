@@ -6,3 +6,11 @@ export type {
   WordpressSignatureError,
   WordpressSignatureErrorCode,
 } from './webhooks/wordpress-signature.js';
+export { BullmqQueue } from './queue/bullmq-queue.js';
+export type { JobProducer } from './queue/bullmq-queue.js';
+export {
+  CMS_QUEUE_CONCURRENCY,
+  CMS_QUEUE_NAME,
+  optionsForJob,
+} from './queue/job-options.js';
+export type { CmsJobOptions } from './queue/job-options.js';

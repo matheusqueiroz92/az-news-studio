@@ -13,7 +13,10 @@
     "db:migrate": "pnpm --filter @az-news/db migrate",
     "db:seed": "pnpm --filter @az-news/db seed",
     "infra:up": "docker compose --env-file .env -f infra/docker-compose.dev.yml up -d",
-    "infra:down": "docker compose --env-file .env -f infra/docker-compose.dev.yml down"
+    "infra:down": "docker compose --env-file .env -f infra/docker-compose.dev.yml down",
+    "wp:up": "docker compose --env-file .env -f infra/docker-compose.dev.yml --profile wordpress up -d mariadb wordpress",
+    "wp:setup": "docker compose --env-file .env -f infra/docker-compose.dev.yml --profile wordpress run --rm -T wpcli bash /scripts/bootstrap.sh",
+    "wp:down": "docker compose --env-file .env -f infra/docker-compose.dev.yml --profile wordpress rm -sf mariadb wordpress"
   },
   "devDependencies": {
     "@az-news/config": "workspace:*",

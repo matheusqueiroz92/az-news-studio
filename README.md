@@ -34,6 +34,17 @@ Agentes de IA encontram a pauta, escrevem, revisam e distribuem; a equipe aprova
 
 Spec-Driven Development: toda funcionalidade nasce de uma spec em `specs/`, com critérios de aceitação, antes de qualquer código. Implementação em TDD (Vitest), arquitetura hexagonal + DDD.
 
+## WordPress local
+
+O WordPress de desenvolvimento fica num profile do Compose. `pnpm infra:up` sobe só Postgres, Redis e Mailpit.
+
+1. Copie `WORDPRESS_DB_NAME`, `WORDPRESS_DB_USER`, `WORDPRESS_DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`, `WP_BASE_URL`, `WP_ADMIN_PASSWORD` e `WP_WEBHOOK_SECRET` do `.env.example` para o `.env` e troque as senhas. Num WordPress já instalado, o setup não altera a senha do admin.
+2. `pnpm wp:up`
+3. `pnpm wp:setup`. Na primeira vez, cole a senha impressa em `WP_APP_PASSWORD`. Rodar de novo não cria outro usuário nem outra senha.
+4. `pnpm wp:down` para o WordPress e o MariaDB. O volume e o resto da infra ficam.
+
+O site local é [http://127.0.0.1:8080](http://127.0.0.1:8080). O health do AZ Bridge é [http://127.0.0.1:8080/wp-json/az-bridge/v1/health](http://127.0.0.1:8080/wp-json/az-bridge/v1/health).
+
 ## Status
 
 Fase 0 — especificação concluída, implementação não iniciada.
