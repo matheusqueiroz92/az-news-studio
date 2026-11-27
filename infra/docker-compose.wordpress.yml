@@ -1,0 +1,82 @@
+# Projeto próprio: wp:down não derruba o Postgres nem o Redis do compose de dev.
+# pnpm wp:up passa --env-file .env.
+name: az-news-studio-wordpress
+
+x-wordpress-env: &wordpress-env
+  WORDPRESS_DB_HOST: mariadb
+  WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:?defina WORDPRESS_DB_USER no .env}
+  WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?defina WORDPRESS_DB_PASSWORD no .env}
+  WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:?defina WORDPRESS_DB_NAME no .env}
+  WP_ENVIRONMENT_TYPE: local
+  WP_WEBHOOK_SECRET: ${WP_WEBHOOK_SECRET:?defina WP_WEBHOOK_SECRET no .env}
+  WORDPRESS_CONFIG_EXTRA: |
+    if (!defined('WP_ENVIRONMENT_TYPE')) {
+      define('WP_ENVIRONMENT_TYPE', 'local');
+    }
+    if (!defined('AZ_STUDIO_WEBHOOK_URL')) {
+      define('AZ_STUDIO_WEBHOOK_URL', 'http://host.docker.internal:3000/api/webhooks/wordpress');
+    }
+    if (!defined('AZ_STUDIO_WEBHOOK_SECRET')) {
+      define('AZ_STUDIO_WEBHOOK_SECRET', getenv_docker('WP_WEBHOOK_SECRET', ''));
+    }
+
+services:
+  # Patch da linha 11.8 confirmado em 2026-11-27: a imagem oficial está em 11.8.9
+  # (a 11.8.10 ainda não foi publicada no Docker Hub).
+  mariadb:
+    image: mariadb:11.8.9
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?defina MARIADB_ROOT_PASSWORD no .env}
+      MARIADB_DATABASE: ${WORDPRESS_DB_NAME:?defina WORDPRESS_DB_NAME no .env}
+      MARIADB_USER: ${WORDPRESS_DB_USER:?defina WORDPRESS_DB_USER no .env}
+      MARIADB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?defina WORDPRESS_DB_PASSWORD no .env}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  wordpress:
+    image: wordpress:7.1.5-php8.3-apache
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      <<: *wordpress-env
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '127.0.0.1:8080:80'
+    volumes:
+      - wordpress-data:/var/www/html
+      - ../wordpress/az-bridge:/var/www/html/wp-content/plugins/az-bridge:ro
+    healthcheck:
+      test: ['CMD', 'php', '-r', "exit(@fsockopen('127.0.0.1', 80) ? 0 : 1);"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  wpcli:
+    image: wordpress:cli-2.12.0-php8.3
+    # A imagem cli é Alpine (www-data = 82). A apache é Debian (www-data = 33).
+    user: '33:33'
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      <<: *wordpress-env
+      HOME: /tmp
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:-}
+    volumes:
+      - wordpress-data:/var/www/html
+      - ../wordpress/az-bridge:/var/www/html/wp-content/plugins/az-bridge:ro
+      - ./wordpress/bootstrap.sh:/scripts/bootstrap.sh:ro
+    working_dir: /var/www/html
+
+volumes:
+  mariadb-data:
+  wordpress-data:
