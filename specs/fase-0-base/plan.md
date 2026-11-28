@@ -654,6 +654,7 @@ Verificação manual contra o WordPress local da T16: o botão cria um rascunho 
   - `docker compose -f infra/docker-compose.prod.yml config`
   - `docker build -f infra/Dockerfile.web .` e `docker build -f infra/Dockerfile.worker .` (se o Docker local aguentar; senão o Reviewer confere os Dockerfiles e a T26 faz o build na VPS)
 - Critério de pronto: imagens base `node:24` com patch pinado nesta tarefa, sem tag `latest`; web em `output: 'standalone'`; worker empacotado com tsup; compose sem WordPress (o CMS é externo); Postgres `pgvector/pgvector:pg16` e Redis `redis:7.4.12-alpine` só na rede interna, sem `ports`; web na rede externa `traefik-public`, host `studio.aznews.com.br`, `certresolver=letsencrypt`, entrada HTTPS; comentário no compose com os caminhos `/var/www/az-news-studio` (código) e `/opt/apps/az-news-studio/` (compose, `.env` chmod 600, volumes); nenhum serviço MinIO.
+- O container do worker roda `node` direto no `CMD` (nada de `pnpm` ou `npm` como processo principal) e usa `init: true` no compose, para o SIGTERM do `docker stop` chegar ao Node. Verificação: `docker stop` no worker com um job em andamento mostra `encerrando o worker` e `worker encerrado` no log, antes dos 10 s de tolerância do Docker.
 - Requisitos: critério "app no ar em studio.aznews.com.br com HTTPS" (a parte que é código); NFR de deploy da seção 8.
 - Commit sugerido: `feat(infra): adiciona as imagens e o compose de produção`
 
