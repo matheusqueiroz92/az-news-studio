@@ -1,0 +1,33 @@
+{
+  "name": "@az-news/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx --env-file=../../.env src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts"
+  },
+  "dependencies": {
+    "@az-news/adapters": "workspace:*",
+    "@az-news/core": "workspace:*",
+    "@az-news/db": "workspace:*",
+    "bullmq": "6.7.8",
+    "drizzle-orm": "0.45.4",
+    "ioredis": "6.1.0",
+    "pg": "8.23.1",
+    "pino": "10.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@az-news/config": "workspace:*",
+    "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "eslint": "10.15.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.1.1"
+  }
+}

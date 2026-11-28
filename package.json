@@ -10,6 +10,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "pnpm --filter @az-news/adapters test:integration",
+    "test:e2e": "pnpm --filter @az-news/worker test:e2e",
     "db:migrate": "pnpm --filter @az-news/db migrate",
     "db:seed": "pnpm --filter @az-news/db seed",
     "infra:up": "docker compose --env-file .env -f infra/docker-compose.dev.yml up -d",
